@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
-	"sort"
 )
 
-var numberMap = map[string]int{
+var digitMap = map[string]int{
 	"0":     0,
 	"1":     1,
 	"2":     2,
@@ -31,27 +29,30 @@ var numberMap = map[string]int{
 	"nine":  9,
 }
 
-func parseCalibrationNumber(line string) int {
-	numberByPosition := make(map[int]int, 0)
+func parseCalibrationNumber(source string) int {
+	var digits [2]int
 
-	for source, digit := range numberMap {
-		r := regexp.MustCompile(source)
-
-		for _, match := range r.FindAllStringIndex(line, -1) {
-			numberByPosition[match[0]] = digit
+	for i := 0; i < len(source); i++ {
+		for digit := range digitMap {
+			match := true
+			for j := 0; j < len(digit); j++ {
+				// If we're at the end of the line or the digit doesn't match, break
+				if (i+j) >= len(source) || source[i+j] != digit[j] {
+					match = false
+					break
+				}
+			}
+			if match {
+				if digits[0] == 0 {
+					digits[0] = digitMap[digit]
+				}
+				digits[1] = digitMap[digit]
+				break
+			}
 		}
 	}
 
-	var positions []int
-	for p := range numberByPosition {
-		positions = append(positions, p)
-	}
-	sort.Ints(positions)
-
-	firstDigit := numberByPosition[positions[0]]
-	lastDigit := numberByPosition[positions[len(positions)-1]]
-
-	return firstDigit*10 + lastDigit
+	return digits[0]*10 + digits[1]
 }
 
 func main() {
@@ -63,24 +64,21 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(bufio.ScanLines)
 
-	calibrationNumbers := make([]int, 0)
+	sum := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		result := parseCalibrationNumber(line)
-		calibrationNumbers = append(calibrationNumbers, result)
+
+		calibrationNumber := parseCalibrationNumber(line)
+
+		fmt.Print(calibrationNumber, " ")
+		sum = sum + calibrationNumber
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(calibrationNumbers)
-
-	sum := 0
-	for _, number := range calibrationNumbers {
-		sum += number
-	}
-
+	fmt.Println()
 	fmt.Println("Sum:", sum)
 }
