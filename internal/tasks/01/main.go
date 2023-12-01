@@ -31,6 +31,29 @@ var numberMap = map[string]int{
 	"nine":  9,
 }
 
+func parseCalibrationNumber(line string) int {
+	numberByPosition := make(map[int]int, 0)
+
+	for source, digit := range numberMap {
+		r := regexp.MustCompile(source)
+
+		for _, match := range r.FindAllStringIndex(line, -1) {
+			numberByPosition[match[0]] = digit
+		}
+	}
+
+	var positions []int
+	for p := range numberByPosition {
+		positions = append(positions, p)
+	}
+	sort.Ints(positions)
+
+	firstDigit := numberByPosition[positions[0]]
+	lastDigit := numberByPosition[positions[len(positions)-1]]
+
+	return firstDigit*10 + lastDigit
+}
+
 func main() {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
@@ -44,27 +67,7 @@ func main() {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		numberByPosition := make(map[int]int, 0)
-
-		for source, digit := range numberMap {
-			r := regexp.MustCompile(source)
-
-			for _, match := range r.FindAllStringIndex(line, -1) {
-				numberByPosition[match[0]] = digit
-			}
-		}
-
-		var positions []int
-		for p := range numberByPosition {
-			positions = append(positions, p)
-		}
-		sort.Ints(positions)
-
-		firstDigit := numberByPosition[positions[0]]
-		lastDigit := numberByPosition[positions[len(positions)-1]]
-
-		result := firstDigit*10 + lastDigit
-
+		result := parseCalibrationNumber(line)
 		calibrationNumbers = append(calibrationNumbers, result)
 	}
 
