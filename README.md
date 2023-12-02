@@ -7,5 +7,16 @@ This year I'm trying to solve the puzzles in Go. I'm not a Go developer, so I'm 
 ## How to run
 
 ```bash
+cd internal/tasks/01
 input.txt | go run main.go
+```
+
+## Benchmarking
+
+You need to have [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat) installed.
+
+```bash
+cd internal/tasks/01
+go test -bench=. -count 10 | tee new.txt
+benchstat old.txt new.txt
 ```
