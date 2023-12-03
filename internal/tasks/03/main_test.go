@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var input = []string{
@@ -15,6 +17,25 @@ var input = []string{
 	"......755.",
 	"...$.*....",
 	".664.598..",
+}
+
+func TestGetGears(t *testing.T) {
+	t.Run("should count numbers for every gear", func(t *testing.T) {
+		engineMap := parseEngineMap(
+			[]string{
+				"1*114*.",
+				".*.*...",
+			},
+		)
+		gears := getGears(engineMap)
+
+		sum := 0
+		for _, gear := range gears {
+			sum += gear.Node1.Number * gear.Node2.Number
+		}
+
+		assert.Equal(t, 228, sum)
+	})
 }
 
 func BenchmarkGetPartNumbers(b *testing.B) {
