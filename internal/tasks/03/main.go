@@ -5,46 +5,39 @@ import (
 	"fmt"
 	"log"
 	"os"
-)
 
-func isDigit(r byte) bool {
-	return r >= '0' && r <= '9'
-}
+	"github.com/nckcol/advent-of-code-2023/internal/utils/matrix"
+)
 
 type MapNode struct {
 	Number int
-	Used   bool
 	Symbol byte
 }
 
-func parseEngineMap(input []string) [][]*MapNode {
-	engineMap := make([][]*MapNode, 1)
-	engineMap[0] = make([]*MapNode, 1)
+func parseEngineMap(input []string) *matrix.Matrix[MapNode] {
+	engineMap := matrix.New[MapNode](len(input[0]), len(input))
 
-	for _, line := range input {
-		engineMap = append(engineMap, make([]*MapNode, 1))
-		lastIndex := len(engineMap) - 1
-		engineMap[lastIndex] = make([]*MapNode, len(line)+2)
+	for y, line := range input {
 		var node *MapNode
 
-		for i := 0; i < len(line); i++ {
-			if line[i] == '.' {
+		for x := 0; x < len(line); x++ {
+			if line[x] == '.' {
 				node = nil
 				continue
-			} else if isDigit(line[i]) {
+			} else if isDigit(line[x]) {
 				if node == nil {
 					node = &MapNode{
 						Number: 0,
 					}
 				}
-				digit := int(line[i] - '0')
+				digit := int(line[x] - '0')
 				node.Number = node.Number*10 + digit
-				engineMap[lastIndex][i+1] = node
+				engineMap.Set(x, y, node)
 			} else {
 				node = nil
-				engineMap[lastIndex][i+1] = &MapNode{
-					Symbol: line[i],
-				}
+				engineMap.Set(x, y, &MapNode{
+					Symbol: line[x],
+				})
 			}
 		}
 	}
@@ -52,82 +45,99 @@ func parseEngineMap(input []string) [][]*MapNode {
 	return engineMap
 }
 
-func getPartNumbers(engineMap [][]*MapNode) []int {
-	numbers := make([]int, 0)
+func getPartNumbers(engineMap *matrix.Matrix[MapNode]) []*MapNode {
+	usedNodes := make(map[*MapNode]bool, 0)
+	partNumberNodes := make([]*MapNode, 0)
 
-	for i, line := range engineMap {
-		for j, node := range line {
-			if node == nil || node.Symbol == 0 {
-				continue
-			}
-			adjacentNodes := []*MapNode{
-				engineMap[i-1][j-1],
-				engineMap[i-1][j],
-				engineMap[i-1][j+1],
-				engineMap[i][j-1],
-				engineMap[i][j+1],
-				engineMap[i+1][j-1],
-				engineMap[i+1][j],
-				engineMap[i+1][j+1],
-			}
+	for iterator := engineMap.CreateIterator(); iterator.HasNext(); {
+		pos, node := iterator.Next()
+		x := pos[0]
+		y := pos[1]
 
-			for _, n := range adjacentNodes {
-				if n != nil && n.Number != 0 && !n.Used {
-					numbers = append(numbers, n.Number)
-					n.Used = true
-				}
+		if node == nil || node.Symbol == 0 {
+			continue
+		}
+
+		adjacentNodes := getAdjacentNodes(engineMap, x, y)
+
+		for _, n := range adjacentNodes {
+			if n != nil && n.Number != 0 && !usedNodes[n] {
+				usedNodes[n] = true
+				partNumberNodes = append(partNumberNodes, n)
 			}
 		}
 	}
 
-	return numbers
+	return partNumberNodes
 }
 
-func getGears(engineMap [][]*MapNode) []int {
-	gears := make([]int, 0)
+type Gear struct {
+	Node1 *MapNode
+	Node2 *MapNode
+}
 
-	for i, line := range engineMap {
-		for j, node := range line {
-			if node == nil || node.Symbol != '*' {
-				continue
-			}
-			adjacentNodes := []*MapNode{
-				engineMap[i-1][j-1],
-				engineMap[i-1][j],
-				engineMap[i-1][j+1],
-				engineMap[i][j-1],
-				engineMap[i][j+1],
-				engineMap[i+1][j-1],
-				engineMap[i+1][j],
-				engineMap[i+1][j+1],
-			}
+func getGears(engineMap *matrix.Matrix[MapNode]) []Gear {
+	gearList := make([]Gear, 0)
 
-			adjacentNumbers := make([]*MapNode, 0)
+	for iterator := engineMap.CreateIterator(); iterator.HasNext(); {
+		pos, node := iterator.Next()
+		x := pos[0]
+		y := pos[1]
 
-			for _, n := range adjacentNodes {
-				if n != nil && n.Number != 0 {
-					used := false
-					for _, a := range adjacentNumbers {
-						if a == n {
-							used = true
-							break
-						}
-					}
-					if !used {
-						adjacentNumbers = append(adjacentNumbers, n)
-					}
-				}
-			}
-
-			if len(adjacentNumbers) != 2 {
-				continue
-			}
-
-			gears = append(gears, adjacentNumbers[0].Number*adjacentNumbers[1].Number)
+		if node == nil || node.Symbol != '*' {
+			continue
 		}
+
+		adjacentNodes := getAdjacentNodes(engineMap, x, y)
+		gear := Gear{}
+		isGearValid := false
+
+		for _, n := range adjacentNodes {
+			if n == nil || n.Number == 0 {
+				continue
+			}
+
+			if gear.Node1 == n || gear.Node2 == n {
+				continue
+			}
+
+			if gear.Node1 == nil {
+				gear.Node1 = n
+			} else if gear.Node2 == nil {
+				gear.Node2 = n
+				isGearValid = true
+			} else {
+				isGearValid = false
+			}
+		}
+
+		if !isGearValid {
+			continue
+		}
+
+		gearList = append(gearList, gear)
 	}
 
-	return gears
+	return gearList
+}
+
+func isDigit(r byte) bool {
+	return r >= '0' && r <= '9'
+}
+
+func getAdjacentNodes[T any](matrix *matrix.Matrix[T], x int, y int) []*T {
+	adjacentNodes := []*T{
+		matrix.At(x-1, y-1),
+		matrix.At(x, y-1),
+		matrix.At(x+1, y-1),
+		matrix.At(x-1, y),
+		matrix.At(x+1, y),
+		matrix.At(x-1, y+1),
+		matrix.At(x, y+1),
+		matrix.At(x+1, y+1),
+	}
+
+	return adjacentNodes
 }
 
 func main() {
@@ -151,16 +161,16 @@ func main() {
 
 	engineMap := parseEngineMap(input)
 
-	numbers := getPartNumbers(engineMap)
+	partNumbers := getPartNumbers(engineMap)
 	sum1 := 0
-	for _, n := range numbers {
-		sum1 += n
+	for _, n := range partNumbers {
+		sum1 += n.Number
 	}
 
 	gears := getGears(engineMap)
 	sum2 := 0
-	for _, gear := range gears {
-		sum2 += gear
+	for _, g := range gears {
+		sum2 += g.Node1.Number * g.Node2.Number
 	}
 
 	fmt.Println()

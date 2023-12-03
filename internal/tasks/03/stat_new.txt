@@ -1,0 +1,25 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/nckcol/advent-of-code-2023/internal/tasks/03
+BenchmarkGetPartNumbers/small_map-8         	 1122810	      1133 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1048 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1041 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1047 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1050 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1052 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1129 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1145 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1048 ns/op
+BenchmarkGetPartNumbers/small_map-8         	 1000000	      1079 ns/op
+BenchmarkGetGears/small_map-8               	 1363591	       876.4 ns/op
+BenchmarkGetGears/small_map-8               	 1555173	       771.7 ns/op
+BenchmarkGetGears/small_map-8               	 1560844	       754.6 ns/op
+BenchmarkGetGears/small_map-8               	 1572492	       760.4 ns/op
+BenchmarkGetGears/small_map-8               	 1577433	       831.0 ns/op
+BenchmarkGetGears/small_map-8               	 1570736	       763.4 ns/op
+BenchmarkGetGears/small_map-8               	 1577305	       771.4 ns/op
+BenchmarkGetGears/small_map-8               	 1504815	       768.8 ns/op
+BenchmarkGetGears/small_map-8               	 1413356	       813.4 ns/op
+BenchmarkGetGears/small_map-8               	 1556886	       763.8 ns/op
+PASS
+ok  	github.com/nckcol/advent-of-code-2023/internal/tasks/03	32.559s
