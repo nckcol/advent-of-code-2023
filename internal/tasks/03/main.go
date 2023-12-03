@@ -17,28 +17,7 @@ type MapNode struct {
 	Symbol byte
 }
 
-func main() {
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) != 0 {
-		log.Fatal("You should pipe input to stdin.")
-	}
-
-	var input []string
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		input = append(input, line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	sum1 := 0
-	sum2 := 0
-
+func parseEngineMap(input []string) [][]*MapNode {
 	engineMap := make([][]*MapNode, 1)
 	engineMap[0] = make([]*MapNode, 1)
 
@@ -70,6 +49,12 @@ func main() {
 		}
 	}
 
+	return engineMap
+}
+
+func getPartNumbers(engineMap [][]*MapNode) []int {
+	numbers := make([]int, 0)
+
 	for i, line := range engineMap {
 		for j, node := range line {
 			if node == nil || node.Symbol == 0 {
@@ -88,12 +73,18 @@ func main() {
 
 			for _, n := range adjacentNodes {
 				if n != nil && n.Number != 0 && !n.Used {
-					sum1 += n.Number
+					numbers = append(numbers, n.Number)
 					n.Used = true
 				}
 			}
 		}
 	}
+
+	return numbers
+}
+
+func getGears(engineMap [][]*MapNode) []int {
+	gears := make([]int, 0)
 
 	for i, line := range engineMap {
 		for j, node := range line {
@@ -132,8 +123,44 @@ func main() {
 				continue
 			}
 
-			sum2 += adjacentNumbers[0].Number * adjacentNumbers[1].Number
+			gears = append(gears, adjacentNumbers[0].Number*adjacentNumbers[1].Number)
 		}
+	}
+
+	return gears
+}
+
+func main() {
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		log.Fatal("You should pipe input to stdin.")
+	}
+
+	var input []string
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		input = append(input, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	engineMap := parseEngineMap(input)
+
+	numbers := getPartNumbers(engineMap)
+	sum1 := 0
+	for _, n := range numbers {
+		sum1 += n
+	}
+
+	gears := getGears(engineMap)
+	sum2 := 0
+	for _, gear := range gears {
+		sum2 += gear
 	}
 
 	fmt.Println()
