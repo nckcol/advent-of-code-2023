@@ -6,13 +6,15 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
+
+	"github.com/nckcol/advent-of-code-2023/internal/utils/tokenizer"
 )
 
 const RED_CUBE_NUMBER = 12
 const GREEN_CUBE_NUMBER = 13
 const BLUE_CUBE_NUMBER = 14
 
+const GAME_LABEL = "Game"
 const RED_LABEL = "red"
 const GREEN_LABEL = "green"
 const BLUE_LABEL = "blue"
@@ -24,42 +26,57 @@ type Subset struct {
 }
 
 func parseGame(source string) (int, []Subset) {
-	subsetList := make([]Subset, 0)
-	split1 := strings.Split(source, ": ")
-	split2 := strings.Split(split1[0], " ")
-	gameNumber, err := strconv.Atoi(split2[1])
+	tokens, err := tokenizer.Tokenize(source, tokenizer.WithSeparators([]byte{':', ';', ','}))
 
 	if err != nil {
 		log.Fatalln("Cannot parse input", err)
 	}
 
-	split3 := strings.Split(split1[1], "; ")
+	var gameNumber int
+	var subsetList []Subset
+	lastSubset := Subset{}
 
-	for _, subsetSource := range split3 {
-		split4 := strings.Split(subsetSource, ", ")
-		subset := &Subset{}
-
-		for _, cubeSource := range split4 {
-			split5 := strings.Split(cubeSource, " ")
-			count, err := strconv.Atoi(split5[0])
-			if err != nil {
-				log.Fatalln("Cannot parse input", err)
+	for i := 0; i < len(tokens); {
+		token := tokens[i]
+		switch {
+		case token.Value == GAME_LABEL:
+			{
+				gameNumber, err = strconv.Atoi(tokens[i+1].Value)
+				if err != nil {
+					log.Fatalln("Cannot parse input", err)
+				}
+				i += 2
 			}
-
-			switch split5[1] {
-			case RED_LABEL:
-				subset.Red += count
-			case GREEN_LABEL:
-				subset.Green += count
-			case BLUE_LABEL:
-				subset.Blue += count
-			default:
-				log.Fatalln("Cannot parse input", err)
+		case token.Value == ";":
+			{
+				subsetList = append(subsetList, lastSubset)
+				lastSubset = Subset{}
+				i += 1
 			}
+		case token.Key == tokenizer.NUMBER:
+			{
+				count, err := strconv.Atoi(token.Value)
+				if err != nil {
+					log.Fatalln("Cannot parse input", err)
+				}
+				switch tokens[i+1].Value {
+				case RED_LABEL:
+					lastSubset.Red += count
+				case GREEN_LABEL:
+					lastSubset.Green += count
+				case BLUE_LABEL:
+					lastSubset.Blue += count
+				default:
+					log.Fatalln("Cannot parse input", err)
+				}
+				i += 2
+			}
+		default:
+			i++
 		}
-
-		subsetList = append(subsetList, *subset)
 	}
+
+	subsetList = append(subsetList, lastSubset)
 
 	return gameNumber, subsetList
 }
