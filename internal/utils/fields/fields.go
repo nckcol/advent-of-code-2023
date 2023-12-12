@@ -72,6 +72,21 @@ func (f *Field) FindPosition(predicate func(byte) bool) (FieldPosition, error) {
 	return FieldPosition{}, errors.New("not found")
 }
 
+func (f *Field) FindAllPositions(predicate func(byte) bool) []FieldPosition {
+	result := make([]FieldPosition, 0)
+	for y, row := range f.Cells {
+		for x, cell := range row {
+			if predicate(cell) {
+				result = append(result, FieldPosition{
+					X: x,
+					Y: y,
+				})
+			}
+		}
+	}
+	return result
+}
+
 func (f *Field) NextAvailable(position FieldPosition) []FieldPosition {
 	result := make([]FieldPosition, 0)
 	for _, p := range []FieldPosition{
