@@ -46,6 +46,42 @@ func NewFromArray(array [][]byte) *Field {
 	}
 }
 
+func NewFromByteArray(array [][]byte) *Field {
+	width := 0
+	cells := make([][]byte, len(array))
+	for _, row := range array {
+		width = max(width, len(row))
+	}
+	for i, row := range array {
+		cells[i] = make([]byte, width)
+		copy(cells[i], row)
+	}
+
+	return &Field{
+		Width:  width,
+		Height: len(array),
+		Cells:  cells,
+	}
+}
+
+func NewFromStringArray(array []string) *Field {
+	width := 0
+	cells := make([][]byte, len(array))
+	for _, row := range array {
+		width = max(width, len(row))
+	}
+	for i, row := range array {
+		cells[i] = make([]byte, width)
+		copy(cells[i], row)
+	}
+
+	return &Field{
+		Width:  width,
+		Height: len(array),
+		Cells:  cells,
+	}
+}
+
 func (f *Field) Get(position FieldPosition) byte {
 	return f.Cells[position.Y][position.X]
 }
@@ -98,6 +134,14 @@ func (f *Field) NextAvailable(position FieldPosition) []FieldPosition {
 		if f.Available(p) {
 			result = append(result, p)
 		}
+	}
+	return result
+}
+
+func (f *Field) String() string {
+	result := ""
+	for _, row := range f.Cells {
+		result += string(row) + "\n"
 	}
 	return result
 }
