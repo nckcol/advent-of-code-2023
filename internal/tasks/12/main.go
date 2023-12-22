@@ -21,7 +21,15 @@ type SpringRow struct {
 }
 
 func (s SpringRow) String() string {
-	return fmt.Sprintf("%s %v", string(s.Row), s.Chunks)
+	chunks := ""
+	for index, chunk := range s.Chunks {
+		if index == len(s.Chunks)-1 {
+			chunks += fmt.Sprintf("%d", chunk)
+		} else {
+			chunks += fmt.Sprintf("%d,", chunk)
+		}
+	}
+	return fmt.Sprintf("%s %s", string(s.Row), chunks)
 }
 
 func main() {
@@ -48,17 +56,19 @@ func main() {
 	}
 
 	allCount := 0
+	memo := make(map[string]int)
 	for _, record := range records {
-		// record = unfoldSpringRow(record)
+		record = unfoldSpringRow(record)
 		fmt.Println(record)
 		record = optimizeSpringRow(record)
 		fmt.Println(record)
-		count := countSpringRowArrangements(record)
+		count := countSpringRowArrangements(memo, record)
 		fmt.Println(count)
 		allCount += count
 	}
 
 	fmt.Println("All:", allCount)
+	fmt.Println("Memo:", len(memo))
 }
 
 func unfoldSpringRow(record SpringRow) SpringRow {
@@ -93,70 +103,66 @@ func optimizeSpringRow(record SpringRow) SpringRow {
 	return result
 }
 
-func countSpringRowArrangements(record SpringRow) int {
-	count := 0
-	damagedSpringCount := 0
-	unknownCount := 0
-	allSpringCount := 0
-	unknownIndexes := make([]int, 0)
-	for index, cell := range record.Row {
-		if cell == CELL_UNKNOWN {
-			unknownCount++
-			unknownIndexes = append(unknownIndexes, index)
-		} else if cell == CELL_DAMAGED {
-			damagedSpringCount++
-		}
-	}
-	for _, chunk := range record.Chunks {
-		allSpringCount += chunk
-	}
-
-	for combination := 0; combination < 1<<unknownCount; combination++ {
-		row := make([]byte, len(record.Row))
-		copy(row, record.Row)
-		for i := 0; i < unknownCount; i++ {
-			if combination&(1<<i) == 0 {
-				row[unknownIndexes[i]] = CELL_DAMAGED
-			} else {
-				row[unknownIndexes[i]] = CELL_OPERATIONAL
-			}
-		}
-
-		if isChunksEqual(getSpringRowChunks(row), record.Chunks) {
-			count++
-		}
-	}
-
-	return count
-}
-
-func getSpringRowChunks(row []byte) []int {
-	chunks := make([]int, 0)
-	chunk := 0
-	for _, cell := range row {
-		if cell == CELL_DAMAGED {
-			chunk++
+func countSpringRowArrangements(memo map[string]int, record SpringRow) int {
+	// fmt.Println(record)
+	if len(record.Row) == 0 {
+		if len(record.Chunks) == 0 {
+			return 1
 		} else {
-			if chunk > 0 {
-				chunks = append(chunks, chunk)
-				chunk = 0
+			return 0
+		}
+	}
+
+	if value, ok := memo[record.String()]; ok {
+		return value
+	}
+
+	switch record.Row[0] {
+	case CELL_UNKNOWN:
+		row1 := make([]byte, len(record.Row))
+		copy(row1, record.Row)
+		row1[0] = CELL_DAMAGED
+		row2 := make([]byte, len(record.Row))
+		copy(row2, record.Row)
+		row2[0] = CELL_OPERATIONAL
+		result := countSpringRowArrangements(memo, SpringRow{Row: row1, Chunks: record.Chunks}) +
+			countSpringRowArrangements(memo, SpringRow{Row: row2, Chunks: record.Chunks})
+		memo[record.String()] = result
+		return result
+	case CELL_OPERATIONAL:
+		result := countSpringRowArrangements(memo, SpringRow{Row: record.Row[1:], Chunks: record.Chunks})
+		memo[record.String()] = result
+		return result
+	case CELL_DAMAGED:
+		if len(record.Chunks) == 0 {
+			memo[record.String()] = 0
+			return 0
+		}
+		target := record.Chunks[0]
+		if target > len(record.Row) {
+			memo[record.String()] = 0
+			return 0
+		}
+		for i := 0; i < target; i++ {
+			if record.Row[i] == CELL_OPERATIONAL {
+				memo[record.String()] = 0
+				return 0
 			}
 		}
-	}
-	if chunk > 0 {
-		chunks = append(chunks, chunk)
-	}
-	return chunks
-}
-
-func isChunksEqual(chunks1 []int, chunks2 []int) bool {
-	if len(chunks1) != len(chunks2) {
-		return false
-	}
-	for i := 0; i < len(chunks1); i++ {
-		if chunks1[i] != chunks2[i] {
-			return false
+		if len(record.Row) > target {
+			if record.Row[target] == CELL_DAMAGED {
+				memo[record.String()] = 0
+				return 0
+			} else {
+				result := countSpringRowArrangements(memo, SpringRow{Row: record.Row[target+1:], Chunks: record.Chunks[1:]})
+				memo[record.String()] = result
+				return result
+			}
 		}
+		result := countSpringRowArrangements(memo, SpringRow{Chunks: record.Chunks[1:]})
+		memo[record.String()] = result
+		return result
 	}
-	return true
+	log.Fatalln("Unknown cell", record.Row[0])
+	return 0
 }
