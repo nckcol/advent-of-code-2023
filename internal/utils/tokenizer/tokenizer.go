@@ -9,7 +9,7 @@ const (
 	SEPARATOR TokenKey = 0
 	NUMBER    TokenKey = 1
 	WORD      TokenKey = 2
-	SYMBOL    TokenKey = 3
+	OPERATOR  TokenKey = 3
 )
 
 var ErrNoProgress = errors.New("no progress")
@@ -24,6 +24,7 @@ type TokenizerContext struct {
 	Source     string
 	Index      int
 	Separators []byte
+	Operators  []string
 	Tokens     []Token
 }
 
@@ -52,6 +53,13 @@ func Tokenize(source string, opts ...TokenizerOption) ([]Token, error) {
 			})
 			continue
 		}
+		if operator, err := parseOperator(context); err == nil {
+			result = append(result, Token{
+				Key:   OPERATOR,
+				Value: operator,
+			})
+			continue
+		}
 		if number, err := parseNumber(context); err == nil {
 			result = append(result, Token{
 				Key:   NUMBER,
@@ -77,6 +85,12 @@ func Tokenize(source string, opts ...TokenizerOption) ([]Token, error) {
 func WithSeparators(separators []byte) TokenizerOption {
 	return func(r *TokenizerContext) {
 		r.Separators = separators
+	}
+}
+
+func WithOperators(operators []string) TokenizerOption {
+	return func(r *TokenizerContext) {
+		r.Operators = operators
 	}
 }
 
@@ -159,4 +173,27 @@ func parseWord(context *TokenizerContext) (string, error) {
 	} else {
 		return "", errors.New("no word")
 	}
+}
+
+func parseOperator(context *TokenizerContext) (string, error) {
+	for _, operator := range context.Operators {
+		if context.Index+len(operator) > len(context.Source) {
+			continue
+		}
+
+		matches := true
+		for i := 0; i < len(operator); i++ {
+			if context.Source[context.Index+i] != operator[i] {
+				matches = false
+			}
+		}
+		if !matches {
+			continue
+		}
+
+		context.Index += len(operator)
+		return operator, nil
+	}
+
+	return "", errors.New("no operator")
 }

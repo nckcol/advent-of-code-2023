@@ -28,8 +28,8 @@ func Filter[T any](slice []T, predicate func(T) bool) []T {
 	return result
 }
 
-func Map[T any](slice []T, f func(T) T) []T {
-	result := make([]T, len(slice))
+func Map[T any, K any](slice []T, f func(T) K) []K {
+	result := make([]K, len(slice))
 	for i, v := range slice {
 		result[i] = f(v)
 	}
