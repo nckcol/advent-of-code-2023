@@ -94,6 +94,22 @@ func (f *Field) Available(position FieldPosition) bool {
 	return position.X >= 0 && position.X < f.Width && position.Y >= 0 && position.Y < f.Height
 }
 
+func (m *Field) Col(x int) []byte {
+	col := make([]byte, 0, m.Height)
+	for y := 0; y < m.Height; y++ {
+		col = append(col, m.Get(FieldPosition{x, y}))
+	}
+	return col
+}
+
+func (m *Field) Row(y int) []byte {
+	row := make([]byte, 0, m.Width)
+	for x := 0; x < m.Width; x++ {
+		row = append(row, m.Get(FieldPosition{x, y}))
+	}
+	return row
+}
+
 func (f *Field) FindPosition(predicate func(byte) bool) (FieldPosition, error) {
 	for y, row := range f.Cells {
 		for x, cell := range row {
@@ -140,8 +156,12 @@ func (f *Field) NextAvailable(position FieldPosition) []FieldPosition {
 
 func (f *Field) String() string {
 	result := ""
-	for _, row := range f.Cells {
-		result += string(row) + "\n"
+	for i, row := range f.Cells {
+		if i == len(f.Cells)-1 {
+			result += string(row)
+		} else {
+			result += string(row) + "\n"
+		}
 	}
 	return result
 }
@@ -189,4 +209,18 @@ func (p FieldPosition) Neighbors(other FieldPosition) bool {
 
 func (p FieldPosition) String() string {
 	return fmt.Sprintf("(%d, %d)", p.X, p.Y)
+}
+
+func (p FieldPosition) Move(direction Direction) FieldPosition {
+	switch direction {
+	case DIRECTION_EAST:
+		return p.NextEast()
+	case DIRECTION_NORTH:
+		return p.NextNorth()
+	case DIRECTION_WEST:
+		return p.NextWest()
+	case DIRECTION_SOUTH:
+		return p.NextSouth()
+	}
+	return p
 }
